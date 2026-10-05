@@ -1,0 +1,32 @@
+{% extends "medtrack/base.html" %}
+{% block title %}Delete Caregiver — Smart MedTrack{% endblock %}
+{% block page_title %}Delete Caregiver{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto space-y-6 animate-fade-in pt-8">
+    <div class="glass-card rounded-2xl p-8 border border-rose-200/70 shadow-xl text-center">
+        <div class="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4 text-3xl">
+            🗑️
+        </div>
+        <h1 class="text-xl font-bold text-slate-800">Remove Caregiver Contact?</h1>
+        <p class="text-slate-500 text-sm mt-2 leading-relaxed">
+            Are you sure you want to remove <span class="font-bold text-slate-800">"{{ caregiver.name }}"</span> ({{ caregiver.get_relationship_display }}) from your emergency escalation chain?
+        </p>
+        <p class="text-xs text-rose-600 bg-rose-50 rounded-xl p-3 mt-4 border border-rose-200">
+            ⚠️ This contact will no longer receive alerts if you miss any scheduled doses.
+        </p>
+
+        <form method="post" class="mt-8 flex items-center justify-center gap-4">
+            {% csrf_token %}
+            <a href="{% url 'medtrack:caregiver_list' %}"
+               class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-100 transition-colors">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm shadow-lg shadow-rose-600/30 transition-all duration-200">
+                Yes, Remove Contact
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

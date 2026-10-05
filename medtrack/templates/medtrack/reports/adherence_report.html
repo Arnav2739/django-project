@@ -1,0 +1,231 @@
+{% load medtrack_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adherence Report — {{ user.get_full_name|default:user.username }}</title>
+    <!-- Tailwind Play CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; }
+            .page-break { page-break-before: always; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
+            .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
+            .border { border-color: #cbd5e1 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased p-4 sm:p-8">
+
+    <!-- Screen Navigation & Print Bar -->
+    <div class="no-print max-w-4xl mx-auto mb-6 flex items-center justify-between bg-white px-6 py-3.5 rounded-2xl shadow-sm border border-slate-200">
+        <a href="{% url 'medtrack:dashboard' %}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Back to Dashboard
+        </a>
+        <div class="flex items-center gap-3">
+            <button onclick="window.print()" class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-md shadow-teal-600/20 transition-all duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Print / Save PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Clinical Report Document Container -->
+    <main class="max-w-4xl mx-auto bg-white rounded-2xl shadow-md border border-slate-200 p-8 sm:p-12 space-y-8">
+
+        <!-- Document Header -->
+        <header class="border-b-2 border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 text-teal-600 font-bold text-xl tracking-tight">
+                    <span class="text-2xl">💊</span> Smart MedTrack
+                </div>
+                <h1 class="text-2xl font-black text-slate-900 mt-1">Clinical Medication Adherence Report</h1>
+                <p class="text-xs text-slate-500 uppercase tracking-widest mt-0.5">Telemedicine Operations & Safety Compliance</p>
+            </div>
+            <div class="text-left sm:text-right text-xs text-slate-600 space-y-1">
+                <p><span class="font-semibold text-slate-800">Reporting Period:</span> {{ start_date|date:"M d, Y" }} – {{ end_date|date:"M d, Y" }}</p>
+                <p><span class="font-semibold text-slate-800">Generated:</span> {{ generated_at|date:"M d, Y H:i" }} ({{ patient.timezone }})</p>
+                <p class="font-mono text-[10px] text-slate-400">DOC-REF: #TRK-{{ patient.pk }}-{{ end_date|date:"Ymd" }}</p>
+            </div>
+        </header>
+
+        <!-- Patient & Physician Card -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <div>
+                <p class="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Patient Information</p>
+                <p class="text-base font-bold text-slate-900 mt-1">{{ user.get_full_name|default:user.username }}</p>
+                <p class="text-slate-600 mt-0.5">Email: {{ user.email|default:"N/A" }}</p>
+                <p class="text-slate-600">Emergency Phone: {{ patient.emergency_phone|default:"Not specified" }}</p>
+            </div>
+            <div>
+                <p class="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Clinical Supervision</p>
+                <p class="text-base font-bold text-slate-900 mt-1">{{ patient.primary_physician|default:"Attending Physician" }}</p>
+                <p class="text-slate-600 mt-0.5">Timezone Anchor: {{ patient.timezone }}</p>
+                <p class="text-slate-600">Escalation Contacts Registered: {{ patient.caregivers.count }}</p>
+            </div>
+        </section>
+
+        <!-- Metric Cards -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl border border-teal-200 bg-teal-50/50">
+                <p class="text-[10px] uppercase font-bold text-teal-700 tracking-wider">Overall Adherence</p>
+                <p class="text-3xl font-extrabold text-teal-800 mt-1">{{ adherence_pct }}%</p>
+                <p class="text-[11px] text-teal-600 mt-0.5">{{ total_taken }} of {{ total_doses }} doses taken</p>
+            </div>
+
+            <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <p class="text-[10px] uppercase font-bold text-emerald-700 tracking-wider">On-Time Doses</p>
+                <p class="text-3xl font-extrabold text-emerald-800 mt-1">{{ taken_ontime }}</p>
+                <p class="text-[11px] text-emerald-600 mt-0.5">Within 30m of schedule</p>
+            </div>
+
+            <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/50">
+                <p class="text-[10px] uppercase font-bold text-amber-700 tracking-wider">Late Intake</p>
+                <p class="text-3xl font-extrabold text-amber-800 mt-1">{{ taken_late }}</p>
+                <p class="text-[11px] text-amber-600 mt-0.5">>30m post schedule</p>
+            </div>
+
+            <div class="p-4 rounded-xl border border-rose-200 bg-rose-50/50">
+                <p class="text-[10px] uppercase font-bold text-rose-700 tracking-wider">Missed Doses</p>
+                <p class="text-3xl font-extrabold text-rose-800 mt-1">{{ missed }}</p>
+                <p class="text-[11px] text-rose-600 mt-0.5">Triggered caregiver alerts</p>
+            </div>
+        </section>
+
+        <!-- Per Medication Breakdown -->
+        <section class="space-y-3">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <span>📊</span> Medication Adherence Summary
+            </h2>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="p-3">Medication</th>
+                            <th class="p-3">Total Scheduled</th>
+                            <th class="p-3">Confirmed Taken</th>
+                            <th class="p-3">Missed</th>
+                            <th class="p-3">Adherence Rate</th>
+                            <th class="p-3">Current Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for item in med_stats %}
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-900">
+                                {{ item.medication.name }}
+                                {% if item.medication.generic_name %}
+                                <span class="text-[10px] text-slate-400 block font-normal">{{ item.medication.generic_name }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3">{{ item.total }}</td>
+                            <td class="p-3 text-emerald-700 font-semibold">{{ item.taken }}</td>
+                            <td class="p-3 {% if item.missed > 0 %}text-rose-600 font-bold{% else %}text-slate-400{% endif %}">{{ item.missed }}</td>
+                            <td class="p-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold
+                                             {% if item.adherence_pct >= 80 %}bg-emerald-100 text-emerald-800
+                                             {% elif item.adherence_pct >= 50 %}bg-amber-100 text-amber-800
+                                             {% else %}bg-rose-100 text-rose-800{% endif %}">
+                                    {{ item.adherence_pct }}%
+                                </span>
+                            </td>
+                            <td class="p-3">{{ item.medication.current_stock }} {{ item.medication.get_dosage_unit_display|lower }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="p-4 text-center text-slate-400">No active medications recorded for this period.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Chronological Dose History -->
+        <section class="space-y-3">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <span>📋</span> Dose Activity Log (Last 30 Days)
+            </h2>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="p-3">Scheduled Time</th>
+                            <th class="p-3">Medication</th>
+                            <th class="p-3">Dosage</th>
+                            <th class="p-3">Outcome</th>
+                            <th class="p-3">Taken / Recorded Time</th>
+                            <th class="p-3">Clinical Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for event in events %}
+                        <tr>
+                            <td class="p-3 font-mono">{{ event.scheduled_time|to_patient_tz:patient.timezone|date:"M d, Y H:i" }}</td>
+                            <td class="p-3 font-medium text-slate-900">{{ event.medication.name }}</td>
+                            <td class="p-3">{{ event.regimen.dose_quantity }} {{ event.medication.get_dosage_unit_display|lower }}</td>
+                            <td class="p-3">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border {{ event.status|status_color }}">
+                                    <span>{{ event.status|status_icon }}</span>
+                                    <span>{{ event.get_status_display }}</span>
+                                </span>
+                            </td>
+                            <td class="p-3 font-mono text-[11px] text-slate-500">
+                                {% if event.taken_at %}
+                                    {{ event.taken_at|to_patient_tz:patient.timezone|date:"M d, H:i" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="p-3 text-[11px] text-slate-500 max-w-xs truncate">
+                                {{ event.notes|default:"—" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="p-4 text-center text-slate-400">No scheduled dose events during this period.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Clinical Signature Block -->
+        <section class="border-t-2 border-slate-200 pt-8 mt-12 grid grid-cols-2 gap-8 text-xs">
+            <div>
+                <p class="font-bold text-slate-700">Clinical Attestation:</p>
+                <p class="text-slate-500 mt-1 leading-relaxed">
+                    This report compiles telemetric adherence records collected from Smart MedTrack.
+                    Missed dose entries triggered secondary caregiver alerts per patient profile protocols.
+                </p>
+            </div>
+            <div class="space-y-4">
+                <div class="border-b border-slate-400 pb-1 flex justify-between items-end">
+                    <span class="text-slate-400">Physician Signature</span>
+                    <span class="text-slate-700 font-medium">Dr. ___________________________</span>
+                </div>
+                <div class="border-b border-slate-400 pb-1 flex justify-between items-end">
+                    <span class="text-slate-400">Date Reviewed</span>
+                    <span class="text-slate-700 font-medium">_____ / _____ / 2026</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>

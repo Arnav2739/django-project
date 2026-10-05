@@ -1,0 +1,283 @@
+{% load static %}
+{% load medtrack_tags %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart MedTrack — Automated Medication Adherence & Inventory Forecasting System">
+    <title>{% block title %}Smart MedTrack{% endblock %}</title>
+
+    <!-- Tailwind CSS (Play CDN for development) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50:  '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            950: '#042f2e',
+                        },
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'slide-in-left': 'slideInLeft 0.3s ease-out',
+                        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideInLeft: {
+                            '0%': { opacity: '0', transform: 'translateX(-10px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
+        /* Glassmorphism card effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Smooth HTMX transitions */
+        .htmx-swapping { opacity: 0; transition: opacity 0.15s ease-out; }
+        .htmx-settling { opacity: 1; transition: opacity 0.15s ease-in; }
+
+        /* Sidebar link active state */
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(13, 148, 136, 0.1));
+            border-right: 3px solid #14b8a6;
+            color: #5eead4;
+        }
+
+        /* Toast notification animation */
+        .toast-enter { animation: slideUp 0.3s ease-out; }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Mobile sidebar overlay */
+        .sidebar-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="h-full bg-slate-50 text-slate-800 antialiased"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+{% if user.is_authenticated %}
+{# ═══════════════════════════════════════════════ #}
+{# AUTHENTICATED LAYOUT — Sidebar + Content       #}
+{# ═══════════════════════════════════════════════ #}
+<div class="flex h-full">
+
+    <!-- ── Mobile Sidebar Overlay ── -->
+    <div id="sidebar-overlay"
+         class="sidebar-overlay fixed inset-0 z-30 bg-black/50 lg:hidden"
+         onclick="toggleSidebar()"></div>
+
+    <!-- ── Sidebar ── -->
+    <aside id="sidebar"
+           class="fixed lg:static inset-y-0 left-0 z-40 w-64 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out
+                  bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-slate-300 flex flex-col shadow-2xl">
+
+        <!-- Logo -->
+        <div class="p-6 border-b border-slate-700/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/25">
+                    <span class="text-xl">💊</span>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white tracking-tight">MedTrack</h1>
+                    <p class="text-[10px] uppercase tracking-widest text-brand-400 font-medium">Smart Adherence</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <p class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Main</p>
+
+            <a href="{% url 'medtrack:dashboard' %}"
+               class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </a>
+
+            <a href="{% url 'medtrack:medication_list' %}"
+               class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white {% if 'medication' in request.resolver_match.url_name %}active{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                Medications
+            </a>
+
+            <a href="{% url 'medtrack:regimen_list' %}"
+               class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white {% if 'regimen' in request.resolver_match.url_name %}active{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Regimens
+            <a href="{% url 'medtrack:adherence_report' %}"
+               class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white {% if 'report' in request.resolver_match.url_name %}active{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Reports & PDF
+            </a>
+
+            <p class="px-3 mt-6 mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Support</p>
+
+            <a href="{% url 'medtrack:caregiver_list' %}"
+               class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white {% if 'caregiver' in request.resolver_match.url_name %}active{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Caregivers
+            </a>
+
+            <a href="{% url 'medtrack:profile_setup' %}"
+               class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white {% if 'profile' in request.resolver_match.url_name %}active{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Settings
+            </a>
+        </nav>
+
+        <!-- User info -->
+        <div class="p-4 border-t border-slate-700/50">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
+                    {{ user.first_name.0 }}{{ user.last_name.0 }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate">{{ user.get_full_name|default:user.username }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ user.email }}</p>
+                </div>
+                <a href="{% url 'medtrack:logout' %}"
+                   class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                   title="Sign Out">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ── Main Content Area ── -->
+    <main class="flex-1 flex flex-col min-h-0 overflow-hidden">
+
+        <!-- Top Bar -->
+        <header class="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20">
+            <!-- Mobile menu button -->
+            <button onclick="toggleSidebar()"
+                    class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+
+            <div class="flex items-center gap-2">
+                <h2 class="text-lg font-semibold text-slate-800">{% block page_title %}Dashboard{% endblock %}</h2>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse-soft"></span>
+                    Live
+                </span>
+            </div>
+        </header>
+
+        <!-- Messages / Toasts -->
+        {% if messages %}
+        <div class="px-4 lg:px-8 pt-4 space-y-2">
+            {% for message in messages %}
+            <div class="toast-enter flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium shadow-sm border
+                        {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border-emerald-200
+                        {% elif message.tags == 'error' %}bg-rose-50 text-rose-800 border-rose-200
+                        {% elif message.tags == 'warning' %}bg-amber-50 text-amber-800 border-amber-200
+                        {% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}">
+                {% if message.tags == 'success' %}✅
+                {% elif message.tags == 'error' %}❌
+                {% elif message.tags == 'warning' %}⚠️
+                {% else %}ℹ️{% endif %}
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto p-4 lg:p-8">
+{% else %}
+{# ═══════════════════════════════════════════════ #}
+{# UNAUTHENTICATED LAYOUT — Centered content      #}
+{# ═══════════════════════════════════════════════ #}
+<div class="min-h-full">
+{% endif %}
+
+    {% block content %}{% endblock %}
+
+{% if user.is_authenticated %}
+        </div>
+    </main>
+</div>
+{% else %}
+</div>
+{% endif %}
+
+<!-- ── Sidebar Toggle Script ── -->
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('active');
+    }
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

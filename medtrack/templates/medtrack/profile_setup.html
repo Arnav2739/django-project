@@ -1,0 +1,174 @@
+{% extends "medtrack/base.html" %}
+{% block title %}Profile & Routine Setup — Smart MedTrack{% endblock %}
+{% block page_title %}Profile & Routine Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
+    <!-- Header banner -->
+    <div class="glass-card rounded-2xl p-6 sm:p-8 border border-slate-200/60 shadow-sm relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-brand-500/10 blur-2xl pointer-events-none"></div>
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-brand-500/20 flex-shrink-0">
+                ⚙️
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Routine & Patient Profile</h1>
+                <p class="text-slate-500 text-sm mt-1 max-w-2xl leading-relaxed">
+                    Smart MedTrack calculates your medication dose times relative to your daily life rhythm.
+                    Keep your routine anchors accurate so reminders arrive at the perfect moment.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form container -->
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {% if profile_form.errors or routine_form.errors %}
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm space-y-1">
+            <div class="flex items-center gap-2 font-semibold">
+                <span>⚠️</span>
+                <span>Please correct the errors indicated below.</span>
+            </div>
+            {% for error in profile_form.non_field_errors %}
+                <p class="text-xs">{{ error }}</p>
+            {% endfor %}
+            {% for error in routine_form.non_field_errors %}
+                <p class="text-xs">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Daily Routine Anchors -->
+            <div class="glass-card rounded-2xl p-6 border border-slate-200/60 shadow-sm space-y-5">
+                <div class="flex items-center gap-3 pb-3 border-b border-slate-200/60">
+                    <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center text-lg">
+                        ☀️
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-slate-800">Daily Routine Anchors</h2>
+                        <p class="text-xs text-slate-500">Meal and sleep reference times</p>
+                    </div>
+                </div>
+
+                <!-- Breakfast -->
+                <div>
+                    <label for="{{ routine_form.breakfast_time.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-2">
+                        <span>🍳</span> Breakfast Time
+                    </label>
+                    {{ routine_form.breakfast_time }}
+                    {% if routine_form.breakfast_time.errors %}
+                        <p class="mt-1 text-xs text-rose-600">{{ routine_form.breakfast_time.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Lunch -->
+                <div>
+                    <label for="{{ routine_form.lunch_time.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-2">
+                        <span>🥗</span> Lunch Time
+                    </label>
+                    {{ routine_form.lunch_time }}
+                    {% if routine_form.lunch_time.errors %}
+                        <p class="mt-1 text-xs text-rose-600">{{ routine_form.lunch_time.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Dinner -->
+                <div>
+                    <label for="{{ routine_form.dinner_time.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-2">
+                        <span>🍲</span> Dinner Time
+                    </label>
+                    {{ routine_form.dinner_time }}
+                    {% if routine_form.dinner_time.errors %}
+                        <p class="mt-1 text-xs text-rose-600">{{ routine_form.dinner_time.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Bedtime -->
+                <div>
+                    <label for="{{ routine_form.bedtime.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-2">
+                        <span>🌙</span> Bedtime
+                    </label>
+                    {{ routine_form.bedtime }}
+                    {% if routine_form.bedtime.errors %}
+                        <p class="mt-1 text-xs text-rose-600">{{ routine_form.bedtime.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile & Contacts -->
+            <div class="glass-card rounded-2xl p-6 border border-slate-200/60 shadow-sm space-y-5">
+                <div class="flex items-center gap-3 pb-3 border-b border-slate-200/60">
+                    <div class="w-9 h-9 rounded-lg bg-brand-100 flex items-center justify-center text-lg">
+                        🏥
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-slate-800">Clinical & Regional</h2>
+                        <p class="text-xs text-slate-500">Timezone and emergency points of contact</p>
+                    </div>
+                </div>
+
+                <!-- Timezone -->
+                <div>
+                    <label for="{{ profile_form.timezone.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-2">
+                        <span>🌐</span> Timezone
+                    </label>
+                    {{ profile_form.timezone }}
+                    {% if profile_form.timezone.errors %}
+                        <p class="mt-1 text-xs text-rose-600">{{ profile_form.timezone.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-[11px] text-slate-400 mt-1">Dose events are automatically scheduled in your local time zone.</p>
+                </div>
+
+                <!-- Emergency Phone -->
+                <div>
+                    <label for="{{ profile_form.emergency_phone.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-2">
+                        <span>🚨</span> Emergency Contact Phone
+                    </label>
+                    {{ profile_form.emergency_phone }}
+                    {% if profile_form.emergency_phone.errors %}
+                        <p class="mt-1 text-xs text-rose-600">{{ profile_form.emergency_phone.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Primary Physician -->
+                <div>
+                    <label for="{{ profile_form.primary_physician.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-2">
+                        <span>🩺</span> Primary Care Physician
+                    </label>
+                    {{ profile_form.primary_physician }}
+                    {% if profile_form.primary_physician.errors %}
+                        <p class="mt-1 text-xs text-rose-600">{{ profile_form.primary_physician.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="p-4 rounded-xl bg-slate-100/70 border border-slate-200/50 mt-6">
+                    <div class="flex items-center gap-2 text-xs font-medium text-slate-700">
+                        <span>💡</span>
+                        <span>Need Caregiver notifications?</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">
+                        Configure multi-tiered caregiver contacts on the
+                        <a href="{% url 'medtrack:caregiver_list' %}" class="text-brand-600 hover:underline font-medium">Caregivers page</a>
+                        for automatic SMS/Email escalations.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action bar -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <a href="{% url 'medtrack:dashboard' %}"
+               class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-100 transition-colors">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold text-sm shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:from-brand-600 hover:to-brand-700 transition-all duration-200 transform hover:-translate-y-0.5">
+                Save Routine & Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

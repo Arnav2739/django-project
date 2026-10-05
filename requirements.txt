@@ -1,4 +1,21 @@
-asgiref==3.12.1
+# Django Core
 Django==6.1.1
+asgiref==3.12.1
 sqlparse==0.6.0
 tzdata==2026.4
+
+# Database
+psycopg[binary]>=3.2
+
+# Environment & Configuration
+django-environ>=0.11
+
+# Task Queue
+celery>=5.4
+redis>=5.0
+
+# Frontend Integration
+django-htmx>=1.19
+
+# PDF Generation
+weasyprint>=62.0

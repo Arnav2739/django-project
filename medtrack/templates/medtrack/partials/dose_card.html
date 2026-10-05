@@ -1,0 +1,78 @@
+{% load medtrack_tags %}
+{# ─────────────────────────────────────────────── #}
+{# Individual dose event card — HTMX swappable     #}
+{# Used by both dashboard.html and HTMX responses  #}
+{# ─────────────────────────────────────────────── #}
+
+<div id="dose-{{ event.pk }}"
+     class="glass-card rounded-xl border shadow-sm transition-all duration-300 hover:shadow-md animate-fade-in
+            {% if event.status == 'TAKEN' %}border-emerald-200/60 bg-emerald-50/50
+            {% elif event.status == 'TAKEN_LATE' %}border-amber-200/60 bg-amber-50/50
+            {% elif event.status == 'SKIPPED' %}border-slate-200/60 bg-slate-50/50 opacity-60
+            {% elif event.status == 'MISSED' %}border-rose-200/60 bg-rose-50/50
+            {% else %}border-slate-200/60{% endif %}">
+
+    <div class="p-4 flex items-center gap-4">
+        <!-- Status Icon -->
+        <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-xl
+                    {% if event.status == 'TAKEN' %}bg-emerald-100
+                    {% elif event.status == 'TAKEN_LATE' %}bg-amber-100
+                    {% elif event.status == 'SKIPPED' %}bg-slate-100
+                    {% elif event.status == 'MISSED' %}bg-rose-100
+                    {% else %}bg-blue-100{% endif %}">
+            {{ event.status|status_icon }}
+        </div>
+
+        <!-- Dose Info -->
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-semibold text-slate-800 truncate">{{ event.medication.name }}</h3>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border {{ event.status|status_color }}">
+                    {{ event.get_status_display }}
+                </span>
+            </div>
+            <div class="flex items-center gap-3 mt-1 text-sm text-slate-500">
+                <span class="font-medium">
+                    {{ event.scheduled_time|to_patient_tz:patient_tz|time:"h:i A" }}
+                </span>
+                <span class="text-slate-300">·</span>
+                <span>{{ event.regimen.dose_quantity }} {{ event.medication.get_dosage_unit_display|lower }}</span>
+                <span class="text-slate-300">·</span>
+                <span class="text-xs">
+                    {% if event.regimen.anchor == 'CUSTOM' %}
+                        Fixed time
+                    {% else %}
+                        {{ event.regimen.get_anchor_display }}
+                        {% if event.regimen.offset_minutes > 0 %}+{{ event.regimen.offset_minutes }}min
+                        {% elif event.regimen.offset_minutes < 0 %}{{ event.regimen.offset_minutes }}min{% endif %}
+                    {% endif %}
+                </span>
+            </div>
+            {% if event.taken_at %}
+            <p class="text-xs text-slate-400 mt-1">
+                Taken at {{ event.taken_at|to_patient_tz:patient_tz|time:"h:i A" }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Action Buttons -->
+        {% if event.is_actionable %}
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <button hx-post="{% url 'medtrack:dose_take' event.pk %}"
+                    hx-target="#dose-{{ event.pk }}"
+                    hx-swap="outerHTML"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium shadow-sm shadow-emerald-500/20 hover:bg-emerald-600 hover:shadow-emerald-500/30 transition-all duration-200 transform hover:-translate-y-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Take
+            </button>
+            <button hx-post="{% url 'medtrack:dose_skip' event.pk %}"
+                    hx-target="#dose-{{ event.pk }}"
+                    hx-swap="outerHTML"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-300 transition-all duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                Skip
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>

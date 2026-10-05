@@ -1,0 +1,140 @@
+{% extends "medtrack/base.html" %}
+{% block title %}{{ title }} — Smart MedTrack{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6 animate-fade-in">
+
+    <!-- Header breadcrumb / back link -->
+    <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="{% url 'medtrack:medication_list' %}" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Medications
+        </a>
+        <span>/</span>
+        <span class="text-slate-800 font-medium">{{ title }}</span>
+    </div>
+
+    <!-- Form Card -->
+    <div class="glass-card rounded-2xl p-6 sm:p-8 border border-slate-200/60 shadow-sm relative overflow-hidden">
+        <div class="flex items-center gap-4 pb-6 border-b border-slate-200/60 mb-6">
+            <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl flex-shrink-0">
+                💊
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">{{ title }}</h1>
+                <p class="text-xs text-slate-500 mt-0.5">Specify medicine details, pack size units, and inventory refill thresholds</p>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+                <p class="font-semibold flex items-center gap-2">
+                    <span>⚠️</span> Please correct the errors below.
+                </p>
+                {% for error in form.non_field_errors %}
+                    <p class="text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Name & Generic Name -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Brand / Medication Name *
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.generic_name.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Generic / Chemical Name
+                    </label>
+                    {{ form.generic_name }}
+                    {% if form.generic_name.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.generic_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Dosage Unit -->
+            <div>
+                <label for="{{ form.dosage_unit.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                    Dosage Unit *
+                </label>
+                {{ form.dosage_unit }}
+                {% if form.dosage_unit.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.dosage_unit.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Inventory numbers (3 columns) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200/60">
+                <div>
+                    <label for="{{ form.current_stock.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Current Stock *
+                    </label>
+                    {{ form.current_stock }}
+                    {% if form.current_stock.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.current_stock.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-[11px] text-slate-400 mt-1">Available in pillbox/bottle</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.reorder_threshold.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Reorder Threshold *
+                    </label>
+                    {{ form.reorder_threshold }}
+                    {% if form.reorder_threshold.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.reorder_threshold.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-[11px] text-slate-400 mt-1">Warn when stock falls to this</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.lead_time_days.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Lead Time (Days) *
+                    </label>
+                    {{ form.lead_time_days }}
+                    {% if form.lead_time_days.errors %}
+                        <p class="text-xs text-rose-600 mt-1">{{ form.lead_time_days.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-[11px] text-slate-400 mt-1">Days pharmacy takes to deliver</p>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label for="{{ form.notes.id_for_label }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                    Clinical Notes & Instructions
+                </label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                    <p class="text-xs text-rose-600 mt-1">{{ form.notes.errors.0 }}</p>
+                {% endif %}
+                <p class="text-[11px] text-slate-400 mt-1">e.g. Take with a full glass of water. Do not crush.</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200/60">
+                <a href="{% url 'medtrack:medication_list' %}"
+                   class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-100 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold text-sm shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:from-brand-600 hover:to-brand-700 transition-all duration-200 transform hover:-translate-y-0.5">
+                    Save Medication
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
